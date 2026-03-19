@@ -12,7 +12,10 @@ import {
   FolderOpen,
   ShieldCheck,
   Cookie,
-  Lock
+  Lock,
+  Settings,
+  Layers,
+  DollarSign
 } from 'lucide-react';
 import { generateAndroidApp, AppFile } from './services/geminiService';
 import { createZipBlob, downloadBlob } from './services/zipService';
@@ -23,6 +26,12 @@ const MAX_PROMPT_LENGTH = 2000;
 
 export default function App() {
   const [prompt, setPrompt] = useState('');
+  const [packageName, setPackageName] = useState('com.example.premiumapp');
+  const [minSdk, setMinSdk] = useState('24');
+  const [uiFramework, setUiFramework] = useState<'Compose' | 'XML'>('Compose');
+  const [useAdmob, setUseAdmob] = useState(true);
+  const [useBilling, setUseBilling] = useState(true);
+  
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedFiles, setGeneratedFiles] = useState<AppFile[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +57,17 @@ export default function App() {
     setGeneratedFiles(null);
 
     try {
-      const files = await generateAndroidApp(prompt.trim());
+      const config = {
+        prompt: prompt.trim(),
+        packageName: packageName.trim() || 'com.example.premiumapp',
+        minSdk,
+        uiFramework,
+        monetization: {
+          admob: useAdmob,
+          billing: useBilling
+        }
+      };
+      const files = await generateAndroidApp(config);
       setGeneratedFiles(files);
     } catch (err: any) {
       setError(err.message || 'An error occurred while generating the app.');
@@ -111,7 +130,7 @@ export default function App() {
                   </p>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div className="relative group">
                     <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-cyan-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
                     <textarea
@@ -123,6 +142,73 @@ export default function App() {
                     />
                     <div className="absolute bottom-4 right-4 text-xs text-zinc-500 font-mono">
                       {prompt.length} / {MAX_PROMPT_LENGTH}
+                    </div>
+                  </div>
+
+                  {/* Advanced Configuration */}
+                  <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-xl">
+                    <div className="flex items-center gap-2 text-zinc-100 mb-6">
+                      <Settings className="w-5 h-5 text-indigo-400" />
+                      <h3 className="font-medium text-lg">App Configuration</h3>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                      <div className="space-y-2">
+                        <label className="text-sm text-zinc-400 font-medium">Package Name</label>
+                        <input 
+                          type="text" 
+                          value={packageName}
+                          onChange={(e) => setPackageName(e.target.value)}
+                          className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-3 text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                          placeholder="com.example.myapp"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm text-zinc-400 font-medium">Minimum SDK</label>
+                        <select 
+                          value={minSdk}
+                          onChange={(e) => setMinSdk(e.target.value)}
+                          className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-3 text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 appearance-none"
+                        >
+                          <option value="21">API 21 (Android 5.0)</option>
+                          <option value="24">API 24 (Android 7.0)</option>
+                          <option value="26">API 26 (Android 8.0)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <label className="text-sm text-zinc-400 font-medium flex items-center gap-2">
+                          <Layers className="w-4 h-4" /> UI Framework
+                        </label>
+                        <div className="flex gap-4">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" checked={uiFramework === 'Compose'} onChange={() => setUiFramework('Compose')} className="w-4 h-4 text-indigo-500 bg-zinc-950 border-white/10 focus:ring-indigo-500/50" />
+                            <span className="text-zinc-300">Jetpack Compose</span>
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" checked={uiFramework === 'XML'} onChange={() => setUiFramework('XML')} className="w-4 h-4 text-indigo-500 bg-zinc-950 border-white/10 focus:ring-indigo-500/50" />
+                            <span className="text-zinc-300">Material 3 XML</span>
+                          </label>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <label className="text-sm text-zinc-400 font-medium flex items-center gap-2">
+                          <DollarSign className="w-4 h-4" /> Monetization
+                        </label>
+                        <div className="flex gap-4">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" checked={useAdmob} onChange={(e) => setUseAdmob(e.target.checked)} className="w-4 h-4 rounded text-indigo-500 bg-zinc-950 border-white/10 focus:ring-indigo-500/50" />
+                            <span className="text-zinc-300">AdMob Ads</span>
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" checked={useBilling} onChange={(e) => setUseBilling(e.target.checked)} className="w-4 h-4 rounded text-indigo-500 bg-zinc-950 border-white/10 focus:ring-indigo-500/50" />
+                            <span className="text-zinc-300">Play Billing</span>
+                          </label>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -249,6 +335,16 @@ export default function App() {
                             Once the Gradle sync is complete, select an emulator or connected device and click the "Run" button (green play icon).
                           </div>
                         </li>
+                        {(useAdmob || useBilling) && (
+                          <li className="flex gap-4">
+                            <span className="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-medium">5</span>
+                            <div>
+                              <strong className="text-zinc-100 block mb-1">Configure Monetization</strong>
+                              {useAdmob && <p className="mb-1">Replace the placeholder AdMob App ID in <code className="bg-zinc-800 px-1 py-0.5 rounded text-xs text-zinc-300">AndroidManifest.xml</code> and Ad Unit IDs in the code with your real IDs from the AdMob dashboard.</p>}
+                              {useBilling && <p>Set up your in-app products or subscriptions in the Google Play Console and update the product IDs in the BillingClient implementation.</p>}
+                            </div>
+                          </li>
+                        )}
                       </ol>
                     </div>
                   </div>

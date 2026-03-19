@@ -7,35 +7,56 @@ export interface AppFile {
   content: string;
 }
 
-const SYSTEM_INSTRUCTION = `You are an expert Android Developer and Software Architect.
-Your task is to generate a complete, professional, and advanced Android Studio project based on the user's concept.
+export interface AppConfig {
+  prompt: string;
+  packageName: string;
+  minSdk: string;
+  uiFramework: 'Compose' | 'XML';
+  monetization: {
+    admob: boolean;
+    billing: boolean;
+  };
+}
+
+const SYSTEM_INSTRUCTION = `You are an elite Android Architect and Developer.
+Your task is to generate a complete, premium, production-ready Android Studio project based on the user's concept.
+The generated app MUST be ready to be published on the Google Play Store and monetized.
+
 You must output a list of files with their relative paths and complete contents.
 
-The generated project MUST be a valid Android Studio project using Kotlin and Gradle (KTS).
-It must include all necessary files to be opened and built in Android Studio, including:
+The generated project MUST be a valid Android Studio project using Kotlin and Gradle (KTS), including:
 1. build.gradle.kts (Project level)
-2. app/build.gradle.kts (App level)
+2. app/build.gradle.kts (App level) - Must include dependencies for monetization, architecture, and UI.
 3. settings.gradle.kts
 4. gradle.properties
-5. app/src/main/AndroidManifest.xml
-6. app/src/main/java/com/example/app/MainActivity.kt (and any other necessary Kotlin files)
-7. app/src/main/res/layout/activity_main.xml (and any other necessary layout files)
-8. app/src/main/res/values/strings.xml
-9. app/src/main/res/values/themes.xml
-10. app/src/main/res/values/colors.xml
+5. proguard-rules.pro - Essential for Play Store security and optimization.
+6. app/src/main/AndroidManifest.xml - Include necessary permissions (INTERNET, AD_ID, BILLING etc.) and metadata.
+7. app/src/main/java/<package_path>/... - Use MVVM architecture, Repository pattern, and clean code.
+8. app/src/main/res/... - Include modern Material 3 themes, colors, and adaptive icons.
 
-Guidelines:
-- Use modern Android development practices (e.g., ViewBinding or Jetpack Compose if appropriate, but stick to XML layouts if simpler for a complete working example unless Compose is requested).
-- Ensure the package name is consistently 'com.example.app'.
-- Provide advanced, professional code with proper error handling, comments, and structure.
-- Do NOT include binary files (like icons or images). If needed, use standard Android vector drawables or placeholders.
-- Ensure the Gradle files use modern dependency management and compatible versions.
+Guidelines for Play Store Readiness & Monetization:
+- Provide advanced, professional code with proper error handling, coroutines for async tasks, and state management.
+- Implement a proper Splash Screen using the AndroidX Core Splashscreen API.
 - The output MUST be a JSON array of file objects.`;
 
-export async function generateAndroidApp(prompt: string): Promise<AppFile[]> {
+export async function generateAndroidApp(config: AppConfig): Promise<AppFile[]> {
+  const detailedPrompt = `
+Generate a production-ready Android app with the following configuration:
+- App Concept: ${config.prompt}
+- Package Name: ${config.packageName}
+- Minimum SDK: ${config.minSdk}
+- UI Framework: ${config.uiFramework === 'Compose' ? 'Jetpack Compose' : 'Material 3 XML'}
+- Include AdMob Monetization: ${config.monetization.admob ? 'YES (Include placeholder AdMob App ID and Banner/Interstitial implementations)' : 'NO'}
+- Include Google Play Billing: ${config.monetization.billing ? 'YES (Include BillingClient wrapper for in-app purchases/subscriptions)' : 'NO'}
+
+Ensure the package name is strictly used across all files (AndroidManifest, Kotlin files, build.gradle.kts namespace).
+If AdMob is enabled, add the required metadata tag in AndroidManifest.xml and initialize MobileAds.
+If Play Billing is enabled, add the com.android.vending.BILLING permission.
+`;
+
   const response = await ai.models.generateContent({
     model: 'gemini-3.1-pro-preview',
-    contents: prompt,
+    contents: detailedPrompt,
     config: {
       systemInstruction: SYSTEM_INSTRUCTION,
       temperature: 0.2,
