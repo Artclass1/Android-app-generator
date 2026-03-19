@@ -1,0 +1,5 @@
+{
+  "name": "Android App Generator",
+  "description": "Generate a complete Android Studio project from a text prompt and download it as a ZIP file.",
+  "requestFramePermissions": []
+}
